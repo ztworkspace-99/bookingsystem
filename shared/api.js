@@ -2,8 +2,8 @@
   "use strict";
 
   const DEFAULT_NEON = {
-    apiUrl: "https://classone-booking-api-yiit.vercel.app",
-    apiKey: "73a5baa8e4a70be55d79615e2dfbf4e843fa04b57ec04764",
+    apiUrl: "https://REPLACE-WITH-YOUR-NEW-API.vercel.app",
+    apiKey: "REPLACE-WITH-YOUR-NEW-API-SECRET",
     stateKey: "production"
   };
 

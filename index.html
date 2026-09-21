@@ -135,6 +135,8 @@
     .check-grid input { width: auto; min-height: 0; }
     .permission-denied { border-color: #e5484d; background: #fff5f5; color: #9f1239; }
     body.auth-locked #loginModal { display: grid !important; }
+    /* No-login deployment (AUTH_DISABLED in the script below): hide every sign-in / sign-out control. */
+    body.auth-disabled #loginModal, body.auth-disabled #loginBtn, body.auth-disabled #signOutBtn, body.auth-disabled #closeLoginBtn { display: none !important; }
     body.auth-locked { background: #F7FFFC; }
     #loginModal.auth-screen {
       position: fixed;
@@ -785,7 +787,7 @@
     }
   </style>
 </head>
-<body class="auth-locked">
+<body class="auth-locked auth-disabled">
   <div id="toast" class="toast"></div>
   <div id="actionPopup" class="modal hide">
     <div class="modal-card" style="max-width:560px;">
@@ -1995,14 +1997,20 @@
       { id: "tpl_enrolment", title: "Enrollment Confirmation", category: "Enrollment", body: "Thank you for confirming the enrollment. We will reserve the regular slot for your child:\n\nStudent: [Child Name]\nSubject: [Subject]\nTeacher: [Teacher]\nRegular time: [Day] [Time]\nPackage: [Package]\n\nWe will update you if there is any class arrangement notice." }
     ];
     const DEFAULT_SYNC = {
-      scriptUrl: "https://script.google.com/macros/s/AKfycbzx58M0_lFbhYjrRm3FF-sSPumU4_T_2_DI2pD7FAFNEwS-PJWCCpkjZYLlatW6bwA/exec",
+      scriptUrl: "",
       apiKey: "classone2026private",
     };
+    // This copy must NOT point at the live Class One database. Fill in the URL and API_SECRET of
+    // your own separate API deployment (its own Vercel project + Neon database).
     const DEFAULT_NEON = {
-      apiUrl: "https://classone-booking-api-yiit.vercel.app",
-      apiKey: "73a5baa8e4a70be55d79615e2dfbf4e843fa04b57ec04764",
+      apiUrl: "https://REPLACE-WITH-YOUR-NEW-API.vercel.app",
+      apiKey: "REPLACE-WITH-YOUR-NEW-API-SECRET",
       stateKey: "production"
     };
+    // true = no sign-in screen; everyone who opens the page is the built-in master admin.
+    // The API must be deployed with the environment variable AUTH_DISABLED=true, otherwise
+    // it will reject every save. Set to false to bring the normal sign-in back.
+    const AUTH_DISABLED = true;
     const ENABLE_BOOKING_OUTCOME_DELTA_SYNC = true;
     const ENABLE_BOOKING_CREATE_DELTA_SYNC = true;
     const ENABLE_RECURRING_ASSIGNMENT_DELTA_SYNC = true;
@@ -2418,6 +2426,7 @@
       if (!user && signedUser && signedUser.status !== "disabled") user = signedUser;
       if (!user) user = (state.users || []).find(item => item.role === "master_admin" && item.status !== "disabled");
       if (!user) user = (state.users || []).find(item => item.status !== "disabled");
+      if (!user && AUTH_DISABLED) user = { id: "user_master_admin", name: "Admin", email: "master@classone.local", role: "master_admin", status: "active", allowedTabs: [] };
       if (user?.id && selectedId !== user.id) uiStateSet("CurrentUserId", user.id);
       return user || null;
     }
@@ -2497,6 +2506,7 @@
     }
 
     function isAuthenticated() {
+      if (AUTH_DISABLED) return true;
       const payload = sessionPayload();
       return Boolean(payload && Number(payload.exp || 0) > Date.now());
     }
@@ -2593,7 +2603,7 @@
 
     function handleAccessDenied({ context = "section", requiredPermission = "", fallbackTab = "", message = "" } = {}) {
       if (isLoggingOut) return false;
-      if (!sessionToken() || !isAuthenticated()) {
+      if (!AUTH_DISABLED && (!sessionToken() || !isAuthenticated())) {
         if (sessionToken()) setLoginMessage("Your session has expired. Please sign in again.", "warn");
         renderAuthState();
         return false;
@@ -19676,6 +19686,7 @@
     });
 
     async function initApp() {
+      document.body.classList.toggle("auth-disabled", AUTH_DISABLED);
       try {
         symbolButtonObserver.observe(document.body, { childList: true, subtree: true });
         tableColumnObserver.observe(document.body, { childList: true, subtree: true });
