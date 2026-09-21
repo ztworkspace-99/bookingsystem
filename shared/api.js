@@ -2,7 +2,7 @@
   "use strict";
 
   const DEFAULT_NEON = {
-    apiUrl: "https://REPLACE-WITH-YOUR-NEW-API.vercel.app",
+    apiUrl: "https://bookingsystem-api-ztworkspace.vercel.app",
     apiKey: "REPLACE-WITH-YOUR-NEW-API-SECRET",
     stateKey: "production"
   };
